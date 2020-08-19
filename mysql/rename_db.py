@@ -1,8 +1,8 @@
+import argparse
+import json
 import os
 import subprocess
 from typing import *
-import argparse
-import json
 
 
 def run(command: str) -> str:
@@ -16,10 +16,10 @@ def run(command: str) -> str:
         return ""
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="""""")
-    parser.add_argument("old_database_name")
-    parser.add_argument("new_database_name")
+    parser.add_argument("old_db_name")
+    parser.add_argument("new_db_name")
     parser.add_argument("-u", "--user", default="root")
     parser.add_argument("-p", "--password", default="")
     parser.add_argument("--hostname", default="127.0.0.1")
@@ -30,22 +30,24 @@ def main():
 
     user, password, hostname, port = args.user, args.password, args.hostname, args.port
 
-    old_database_name, new_database_name = (
-        f"'{args.old_database_name}'",
-        f"'{args.new_database_name}'",
+    old_db_name, new_db_name = (
+        f"'{args.old_db_name}'",
+        f"'{args.new_db_name}'",
     )
 
     connection_string = f" -u {user} -p'{password}' -P {port} -h {hostname} "
 
-    run(f"mysql {connection_string}" + f'-e "CREATE DATABASE {new_database_name}"')
     run(
-        f"mysqldump {connection_string} {old_database_name} | mysql {connection_string} {new_database_name}"
+        f"mysql {connection_string}"
+        + f'-e "CREATE DATABASE IF NOT EXISTS {new_db_name}"'
+    )
+    run(
+        f"mysqldump {connection_string} {old_db_name} | mysql {connection_string} {new_db_name}"
     )
 
     if args.delete:
-        run(f"mysql {connection_string}" + f'-e "DROP DATABASE {old_database_name}"')
+        run(f"mysql {connection_string}" + f'-e "DROP DATABASE {old_db_name}"')
 
 
 if __name__ == "__main__":
     main()
-
