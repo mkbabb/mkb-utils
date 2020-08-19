@@ -4,7 +4,7 @@ import os
 import subprocess
 from typing import *
 
-from utils import run
+from utils.utils import run
 
 
 def main() -> None:
