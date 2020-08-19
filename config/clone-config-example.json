@@ -1,0 +1,21 @@
+{
+    "from": {
+        "host": "",
+        "port": "",
+
+        "database": "",
+        "username": "",
+        "password": "",
+
+        "tables": []
+    },
+
+    "to": {
+        "host": "",
+        "port": "",
+
+        "database": "",
+        "username": "",
+        "password": ""
+    }
+}

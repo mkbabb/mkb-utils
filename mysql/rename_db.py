@@ -4,27 +4,24 @@ import os
 import subprocess
 from typing import *
 
-
-def run(command: str) -> str:
-    stdout, stderr = subprocess.Popen(
-        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    ).communicate()
-
-    if stdout is not None:
-        return bytes(stdout).decode("utf-8")
-    else:
-        return ""
+from utils.utils import run
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="""""")
-    parser.add_argument("old_db_name")
-    parser.add_argument("new_db_name")
+    parser = argparse.ArgumentParser(
+        description="""Renames an input MySQL database using mysqldump."""
+    )
+    parser.add_argument("old_db_name", help="The old name of the input db.")
+    parser.add_argument("new_db_name", help="The new name of the input db.")
     parser.add_argument("-u", "--user", default="root")
     parser.add_argument("-p", "--password", default="")
     parser.add_argument("--hostname", default="127.0.0.1")
     parser.add_argument("-P", "--port", default="3306")
-    parser.add_argument("--delete", action="store_true")
+    parser.add_argument(
+        "--delete",
+        action="store_true",
+        help="Whether or not the old named db should be removed.",
+    )
 
     args = parser.parse_args()
 

@@ -7,12 +7,9 @@ from typing import *
 
 
 def run(command: str) -> str:
-    print(command)
     stdout, stderr = subprocess.Popen(
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ).communicate()
-
-    print(stdout, stderr)
 
     if stdout is not None:
         s = bytes(stdout).decode("utf-8")
