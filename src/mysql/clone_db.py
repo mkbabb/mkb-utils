@@ -4,7 +4,7 @@ import os
 import subprocess
 from typing import *
 
-from utils.utils import run, quote_value
+from utils import quote_value, run
 
 
 def create_connection_string(
