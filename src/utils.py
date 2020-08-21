@@ -6,10 +6,14 @@ import subprocess
 from typing import *
 
 
-def run(command: str) -> str:
+def run(command: str, debug: bool = True) -> str:
     stdout, stderr = subprocess.Popen(
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ).communicate()
+
+    if debug:
+        print(stdout)
+        print(stderr)
 
     if stdout is not None:
         s = bytes(stdout).decode("utf-8")
@@ -18,7 +22,7 @@ def run(command: str) -> str:
         return ""
 
 
-def quote_value(value: str, quote: str = "'") -> str:
+def quote_value(value: str, quote: str = '"') -> str:
     if re.match(re.compile(quote + "(.*)" + quote), value) is not None:
         return value
     else:

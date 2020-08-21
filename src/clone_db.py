@@ -34,20 +34,24 @@ def main() -> None:
     )
 
     from_db_name, to_db_name = (
-        quote_value(from_db["database"]),
-        quote_value(to_db["database"]),
+        quote_value(from_db["database"], '"'),
+        quote_value(to_db["database"], '"'),
     )
 
     tables = " ".join(map(quote_value, from_db["tables"]))
 
     run(
-        f"mysql {to_connection_string}"
+        f"mysql {to_connection_string} "
         + f'-e "CREATE DATABASE IF NOT EXISTS {to_db_name}"'
     )
 
+    print(f"Created database {to_db_name}")
+
     run(
-        f"mysqldump --single-transaction {from_connection_string} {from_db_name} {tables} | mysql {to_connection_string} {to_db_name}"
+        f"mysqldump --single-transaction {from_connection_string} {from_db_name} | mysql {to_connection_string} {to_db_name}"
     )
+
+    print(f"Successfully dumped tables: {tables}")
 
 
 if __name__ == "__main__":
