@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
 import argparse
 import json
 import os
 import subprocess
 from typing import *
 
-from utils.utils import run
+from utils import run
 
 
 def main() -> None:
