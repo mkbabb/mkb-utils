@@ -48,10 +48,10 @@ def main() -> None:
     print(f"Created database {to_db_name}")
 
     run(
-        f"mysqldump --single-transaction {from_connection_string} {from_db_name} | mysql {to_connection_string} {to_db_name}"
+        f"mysqldump --single-transaction {from_connection_string} {from_db_name} {tables} | mysql {to_connection_string} {to_db_name}"
     )
 
-    print(f"Successfully dumped tables: {tables}")
+    print(f"Dumped tables: {tables}")
 
 
 if __name__ == "__main__":
