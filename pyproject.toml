@@ -6,6 +6,7 @@ authors = ["Mike Babb <mike7400@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+mysql-connector-python = "^8.0.21"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
