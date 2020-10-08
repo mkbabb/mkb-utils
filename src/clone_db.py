@@ -30,7 +30,6 @@ def open_db_connection(db_config: dict) -> mysql.connector.MySQLConnection:
         host=db_config["host"],
         port=db_config["port"],
         password=db_config["password"],
-        database=db_config["database"],
     )
 
 
@@ -43,7 +42,7 @@ def main() -> None:
 
     config = json.load(open(args.config, "r"))
     from_db_config, to_db_config = config["from"], config["to"]
-    
+
     dump_name = from_db_config.get("dump_name")
     no_provided_dump = dump_name is None
 
@@ -67,6 +66,7 @@ def main() -> None:
 
     with contextlib.closing(open_db_connection(from_db_config)) as from_connection:
         cursor = from_connection.cursor(dictionary=True)
+        cursor.execute(f"USE `{from_db_name}`;")
         if args.ignore_views:
             cursor.execute(BASE_TABLE_SQL(from_db_name))
             tables += [
@@ -85,6 +85,7 @@ def main() -> None:
     with contextlib.closing(open_db_connection(to_db_config)) as to_connection:
         cursor = to_connection.cursor(dictionary=True)
         cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{to_db_name}`")
+        cursor.execute(f"USE `{to_db_name}`;")
         print(f"Created database {to_db_name}")
 
     run(f"mysql {to_connection_string} {to_db_name} < {dump_name}")
