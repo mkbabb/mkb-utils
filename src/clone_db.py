@@ -2,6 +2,7 @@
 import argparse
 import contextlib
 import json
+from json import dump
 import os
 import subprocess
 import tempfile
@@ -18,7 +19,7 @@ BASE_TABLE_SQL = (
 )
 
 
-def create_connection_string(
+def create_connection_str(
     username: str, hostname: str, port: str = "3306", password: str = ""
 ) -> str:
     return f"-u {username} -p'{password}' -P {port} -h {hostname}"
@@ -31,6 +32,63 @@ def open_db_connection(db_config: dict) -> mysql.connector.MySQLConnection:
         port=db_config["port"],
         password=db_config["password"],
     )
+
+
+def get_table_names(db_config: dict, ignore_views: bool = True) -> Set[str]:
+    tables = []
+
+    with contextlib.closing(open_db_connection(db_config)) as from_connection:
+        cursor = from_connection.cursor(dictionary=True)
+        cursor.execute(f"USE `{db_config['database']}`;")
+
+        if ignore_views:
+            cursor.execute(BASE_TABLE_SQL(db_config["database"]))
+            tables += [
+                j for i in cursor.fetchall() if (j := i.get("TABLE_NAME")) is not None
+            ]
+
+    return set(tables)
+
+
+def dump_out_db(db_config: dict, tables: Set[str]) -> str:
+    tables_str = "".join(tables)
+
+    connection_str = create_connection_str(
+        db_config["username"],
+        db_config["host"],
+        db_config["port"],
+        db_config["password"],
+    )
+
+    database = db_config["database"]
+
+    dump_name = f"{next(tempfile._get_candidate_names())}.sql"
+
+    run(
+        f"mysqldump -f --single-transaction --set-gtid-purged=OFF {connection_str} '{database}' {tables_str} > {dump_name}"
+    )
+
+    print(f"Dumped database {database}.")
+
+    return dump_name
+
+
+def dump_in_db(db_config: dict, dump_name: str) -> None:
+    connection_str = create_connection_str(
+        db_config["username"],
+        db_config["host"],
+        db_config["port"],
+        db_config["password"],
+    )
+    database = db_config["database"]
+
+    with contextlib.closing(open_db_connection(db_config)) as to_connection:
+        cursor = to_connection.cursor(dictionary=True)
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{database}`;")
+        cursor.execute(f"USE `{database}`;")
+        print(f"Created database {database}")
+
+    run(f"mysql {connection_str} {database} < {dump_name}")
 
 
 def main() -> None:
@@ -46,49 +104,13 @@ def main() -> None:
     dump_name = from_db_config.get("dump_name")
     no_provided_dump = dump_name is None
 
-    from_connection_string, to_connection_string = (
-        create_connection_string(
-            from_db_config["username"],
-            from_db_config["host"],
-            from_db_config["port"],
-            from_db_config["password"],
-        ),
-        create_connection_string(
-            to_db_config["username"],
-            to_db_config["host"],
-            to_db_config["port"],
-            to_db_config["password"],
-        ),
-    )
-
-    from_db_name, to_db_name = (from_db_config["database"], to_db_config["database"])
-    tables = from_db_config.get("tables", [])
-
-    with contextlib.closing(open_db_connection(from_db_config)) as from_connection:
-        cursor = from_connection.cursor(dictionary=True)
-        cursor.execute(f"USE `{from_db_name}`;")
-        if args.ignore_views:
-            cursor.execute(BASE_TABLE_SQL(from_db_name))
-            tables += [
-                j for i in cursor.fetchall() if (j := i.get("TABLE_NAME")) is not None
-            ]
-
-    tables_str = " ".join(tables)
-
     if no_provided_dump:
-        dump_name = next(tempfile._get_candidate_names())
-        run(
-            f"mysqldump -f --single-transaction --set-gtid-purged=OFF {from_connection_string} '{from_db_name}' {tables_str} > {dump_name}"
+        tables = set(from_db_config.get("tables", [])) | get_table_names(
+            from_db_config, args.ignore_views
         )
-        print(f"Dumped database {from_db_name}.")
+        dump_name = dump_out_db(from_db_config, tables)
 
-    with contextlib.closing(open_db_connection(to_db_config)) as to_connection:
-        cursor = to_connection.cursor(dictionary=True)
-        cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{to_db_name}`")
-        cursor.execute(f"USE `{to_db_name}`;")
-        print(f"Created database {to_db_name}")
-
-    run(f"mysql {to_connection_string} {to_db_name} < {dump_name}")
+    dump_in_db(to_db_config, dump_name)
 
     if no_provided_dump:
         run(f"rm {dump_name}")
