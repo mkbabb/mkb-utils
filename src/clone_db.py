@@ -99,18 +99,19 @@ def main() -> None:
     args = parser.parse_args()
 
     config = json.load(open(args.config, "r"))
-    from_db_config, to_db_config = config["from"], config["to"]
+    from_db_config, to_db_config = config.get("from"), config.get("to")
 
     dump_name = from_db_config.get("dump_name")
     no_provided_dump = dump_name is None
 
-    if no_provided_dump:
+    if from_db_config is not None and no_provided_dump:
         tables = set(from_db_config.get("tables", [])) | get_table_names(
             from_db_config, args.ignore_views
         )
         dump_name = dump_out_db(from_db_config, tables)
 
-    dump_in_db(to_db_config, dump_name)
+    if to_db_config is not None:
+        dump_in_db(to_db_config, dump_name)
 
     if no_provided_dump:
         run(f"rm {dump_name}")
