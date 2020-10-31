@@ -51,7 +51,7 @@ def get_table_names(db_config: dict, ignore_views: bool = True) -> Set[str]:
 
 
 def dump_out_db(db_config: dict, tables: Set[str]) -> str:
-    tables_str = "".join(tables)
+    tables_str = " ".join(map(lambda x: f"'{x}'", tables))
 
     connection_str = create_connection_str(
         db_config["username"],
@@ -102,11 +102,14 @@ def main() -> None:
     from_db_config, to_db_config = config.get("from"), config.get("to")
 
     dump_name = from_db_config.get("dump_name")
+    tables = set(from_db_config.get("tables", []))
     no_provided_dump = dump_name is None
 
     if from_db_config is not None and no_provided_dump:
-        tables = set(from_db_config.get("tables", [])) | get_table_names(
-            from_db_config, args.ignore_views
+        tables = (
+            tables
+            if len(tables) > 0
+            else get_table_names(from_db_config, args.ignore_views)
         )
         dump_name = dump_out_db(from_db_config, tables)
 
