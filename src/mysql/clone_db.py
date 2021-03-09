@@ -15,13 +15,13 @@ def create_connection_str(
     return f"-u {username} -p'{password}' -P {port} -h {host}"
 
 
-def get_table_names(db_config: dict, ignore_views: bool = True) -> Set[str]:
+def get_table_names(db_config: dict, views: bool = True) -> Set[str]:
     tables = []
 
     with contextlib.closing(open_mysql_conn(db_config)) as conn:
         insp = sqla.inspect(conn.engine)
         tables.extend(insp.get_table_names())
-        if not ignore_views:
+        if views:
             tables.extend(insp.get_view_names())
 
     return set(tables)
@@ -60,7 +60,7 @@ def dump_in_db(db_config: dict, dump_name: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
-    parser.add_argument("--ignore_views", action="store_true")
+    parser.add_argument("--views", action="store_true")
 
     args = parser.parse_args()
 
@@ -73,7 +73,7 @@ def main() -> None:
     tables = set(from_db_config.get("tables", []))
 
     if from_db_config is not None and no_provided_dump:
-        tables |= get_table_names(from_db_config, args.ignore_views)
+        tables |= get_table_names(from_db_config, args.views)
         dump_name = dump_out_db(from_db_config, tables)
 
     if to_db_config is not None:
